@@ -47,18 +47,6 @@ const userSchema = new mongoose.Schema(
       default: false,
     },
 
-    suspensionReason: {
-      type: String,
-      required: function () {
-        return this.isSuspended === true;
-      },
-    },
-    suspendedAt: {
-      type: Date,
-      required: function () {
-        return this.isSuspended === true;
-      },
-    },
     verified: {
       type: Boolean,
       default: false,

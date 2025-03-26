@@ -56,12 +56,18 @@ export const updateLocation = async (req, res) => {
   }
 };
 
-export const deleteLocation = async (req, res, next) => {
+export const deleteLocation = async (req, res) => {
   try {
     const { id } = req.params;
-    await commandLocationService.deleteLocation(id);
-    res.status(204).end();
+    const result = await commandLocationService.deleteLocation(id);
+    res.status(204).json({
+      success: true,
+      data: result,
+    });
   } catch (err) {
-    next(err);
+    res.status(err.status || 500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };

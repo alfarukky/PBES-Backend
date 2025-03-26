@@ -18,7 +18,7 @@ import {
 const locationRoute = Router();
 
 locationRoute.post(
-  '/',
+  '/create',
   authMiddleware,
   roleMiddleware('superAdmin'),
   generateMiddleWare(createLocationSchema),
@@ -28,23 +28,23 @@ locationRoute.post(
 locationRoute.get(
   '/',
   authMiddleware,
-  roleMiddleware('superAdmin'),
+  roleMiddleware('SuperAdmin'),
   generateMiddleWare(paginationSchema),
   getLocations
 );
 
 locationRoute.patch(
-  '/:id',
+  '/:id/update',
   authMiddleware,
-  roleMiddleware('superAdmin', 'Admin'),
+  roleMiddleware('SuperAdmin', 'Admin'),
   generateMiddleWare(updateLocationSchema),
   updateLocation
 );
 
 locationRoute.delete(
-  '/:id',
+  '/:id/delete',
   authMiddleware,
-  roleMiddleware('superAdmin'),
+  roleMiddleware('SuperAdmin'),
   generateMiddleWare(objectIdSchema, 'params'),
   deleteLocation
 );
