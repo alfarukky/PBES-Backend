@@ -12,15 +12,15 @@ import {
   createLocationSchema,
   updateLocationSchema,
   paginationSchema,
-  objectIdSchema,
 } from '../validation/commandLocation.validation.js';
+import { objectIdSchema } from '../validation/objectId.validation.js';
 
 const locationRoute = Router();
 
 locationRoute.post(
   '/create',
   authMiddleware,
-  roleMiddleware('superAdmin'),
+  roleMiddleware(['SuperAdmin']),
   generateMiddleWare(createLocationSchema),
   createLocation
 );
@@ -28,7 +28,7 @@ locationRoute.post(
 locationRoute.get(
   '/',
   authMiddleware,
-  roleMiddleware('SuperAdmin'),
+  roleMiddleware(['SuperAdmin']),
   generateMiddleWare(paginationSchema),
   getLocations
 );
@@ -36,7 +36,7 @@ locationRoute.get(
 locationRoute.patch(
   '/:id/update',
   authMiddleware,
-  roleMiddleware('SuperAdmin', 'Admin'),
+  roleMiddleware(['SuperAdmin', 'Admin']),
   generateMiddleWare(updateLocationSchema),
   updateLocation
 );
@@ -44,7 +44,7 @@ locationRoute.patch(
 locationRoute.delete(
   '/:id/delete',
   authMiddleware,
-  roleMiddleware('SuperAdmin'),
+  roleMiddleware(['SuperAdmin']),
   generateMiddleWare(objectIdSchema, 'params'),
   deleteLocation
 );

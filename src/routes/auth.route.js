@@ -2,6 +2,7 @@ import { Router } from 'express';
 import * as authController from '../controllers/auth.controllers.js';
 import { generateMiddleWare } from '../middleware/route.middleware.js';
 import { authMiddleware } from '../middleware/auth.middleware.js';
+import { roleMiddleware } from '../middleware/role.middleware.js';
 import {
   loginSchema,
   registerSchema,
@@ -15,6 +16,7 @@ const authRoute = Router();
 authRoute.post(
   '/register',
   authMiddleware, // Ensure only logged-in users can access this endpoint
+  roleMiddleware(['SuperAdmin', 'Admin']), // Ensure only SuperAdmin or Admin can access this endpoint
   generateMiddleWare(registerSchema),
   authController.registerUser
 );
@@ -41,8 +43,8 @@ authRoute.post(
   authController.forgotPassword
 );
 
-authRoute.post(
-  '/reset-password/:token', // Token is now part of the URL
+authRoute.patch(
+  '/reset-password/:token',
   generateMiddleWare(resetPasswordSchema),
   authController.resetPassword
 );

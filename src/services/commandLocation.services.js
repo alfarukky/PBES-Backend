@@ -10,8 +10,8 @@ export const createLocation = async (name, code) => {
   const existing = await CommandLocation.findOne(
     {
       $or: [
-        { name: { $eq: sanitizedName } }, // Exact match with collation
-        { code: { $eq: sanitizedCode } },
+        { name: sanitizedName }, // Exact match with collation
+        { code: sanitizedCode },
       ],
     },
     null,
@@ -28,10 +28,19 @@ export const createLocation = async (name, code) => {
   }
 
   // 3. Create with sanitized data
-  return await CommandLocation.create({
+  const newLocation = await CommandLocation.create({
     name: sanitizedName,
     code: sanitizedCode,
   });
+
+  return {
+    message: 'Location created successfully',
+    data: {
+      _id: newLocation._id,
+      name: newLocation.name,
+      code: newLocation.code,
+    },
+  };
 };
 
 export const getLocations = async (page = 1, limit = 10) => {

@@ -61,7 +61,7 @@ export const deleteLocation = async (req, res) => {
     const { id } = req.params;
     const result = await commandLocationService.deleteLocation(id);
     res.status(204).json({
-      success: true,
+      message: 'User deleted successfully',
       data: result,
     });
   } catch (err) {

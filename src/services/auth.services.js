@@ -1,5 +1,5 @@
 import bcrypt from 'bcrypt';
-import User from '../model/Schema/user.Schema.js';
+import User from '../model/Schema/user.schema.js';
 import jwt from 'jsonwebtoken';
 import { ErrorWithStatus } from '../Exception/error-with-status.exception.js';
 import {
@@ -11,6 +11,31 @@ import {
   sendPasswordResetEmail,
 } from '../services/email.services.js';
 
+// Constants
+const TOKEN_EXPIRATION = 1 * 60 * 1000; // 20 minutes
+const EMAIL_VERIFY_EXPIRY = 24 * 60 * 60 * 1000;
+const PASSWORD_RESET_EXPIRY = 60 * 60 * 1000; // 1 hour
+const JWT_EXPIRATION = '1h';
+const ROLE_CREATION_RULES = {
+  SuperAdmin: ['Admin'],
+  Admin: ['OperationalOfficer', 'CancellationOfficer'],
+};
+
+// Helper function for user response formatting
+const formatUserResponse = (user) => ({
+  id: user._id,
+  serviceNumber: user.serviceNumber,
+  name: user.name,
+  email: user.email,
+  role: user.role,
+  ...(user.commandLocation && {
+    commandLocation: {
+      name: user.commandLocation.name,
+      code: user.commandLocation.code,
+    },
+  }),
+});
+
 export const registerUser = async (
   serviceNumber,
   name,
@@ -21,41 +46,15 @@ export const registerUser = async (
   loggedInUserRole,
   createdBy
 ) => {
-  // Check if all fields are provided
+  // Validate input
   if (!serviceNumber || !name || !email || !password || !role) {
     throw new ErrorWithStatus('All fields are required', 400);
   }
 
-  /// Role creation hierarchy validation
-  switch (loggedInUserRole) {
-    case 'SuperAdmin':
-      if (role !== 'Admin') {
-        throw new ErrorWithStatus(
-          'SuperAdmin can only create Admin users',
-          403
-        );
-      }
-      break;
-
-    case 'Admin':
-      if (!['OperationalOfficer', 'CancellationOfficer'].includes(role)) {
-        throw new ErrorWithStatus(
-          'Admins can only create OperationalOfficer or CancellationOfficer users',
-          403
-        );
-      }
-      break;
-
-    case 'OperationalOfficer':
-    case 'CancellationOfficer':
-      throw new ErrorWithStatus('You are not authorized to create users', 403);
-      break;
-
-    default:
-      throw new ErrorWithStatus('Invalid user role', 400);
+  if (!ROLE_CREATION_RULES[loggedInUserRole]?.includes(role)) {
+    throw new ErrorWithStatus(`${loggedInUserRole} cannot create ${role}`, 403);
   }
 
-  // Command location validation for officer roles
   if (
     ['OperationalOfficer', 'CancellationOfficer'].includes(role) &&
     !commandLocation
@@ -66,23 +65,21 @@ export const registerUser = async (
     );
   }
 
-  // Check if user already exists
+  // Check for existing user (optimized query)
   const existingUser = await User.findOne({
     $or: [{ serviceNumber }, { email }],
-  });
+  })
+    .select('_id')
+    .lean();
   if (existingUser) {
     throw new ErrorWithStatus('User already exists', 400);
   }
 
-  // Hash password
+  // Create user with hashed password
   const hashedPassword = await bcrypt.hash(password, 10);
-
-  // Generate email verification token
   const emailVerificationToken = generateVerificationToken();
-  const emailVerificationTokenExpires = Date.now() + 20 * 60 * 1000; // 20 minutes
 
-  /// Create new user
-  const newUser = new User({
+  const newUser = await User.create({
     serviceNumber,
     name,
     email,
@@ -93,185 +90,195 @@ export const registerUser = async (
       : {}),
     createdBy,
     emailVerificationToken,
-    emailVerificationTokenExpires,
+    emailVerificationTokenExpires: Date.now() + TOKEN_EXPIRATION,
   });
 
-  await newUser.save();
-
-  // Populate commandLocation details
-  const userWithLocation = await User.findById(newUser._id)
-    .populate('commandLocation', 'name code')
-    .lean(); // Convert to plain JS object
-
-  // Send verification email
-  await sendVerificationEmail(name, email, emailVerificationToken);
+  // Parallelize email sending and user population
+  const [userWithLocation] = await Promise.all([
+    User.findById(newUser._id).populate('commandLocation', 'name code').lean(),
+    sendVerificationEmail(name, email, emailVerificationToken),
+  ]);
 
   return {
     message:
       'User created successfully. Please check your email to verify your account.',
-    data: {
-      id: userWithLocation._id,
-      serviceNumber: userWithLocation.serviceNumber,
-      name: userWithLocation.name,
-      email: userWithLocation.email,
-      role: userWithLocation.role,
-      ...(userWithLocation.commandLocation && {
-        commandLocation: {
-          name: userWithLocation.commandLocation.name,
-          code: userWithLocation.commandLocation.code,
-        },
-      }),
-    },
+    data: formatUserResponse(userWithLocation),
   };
 };
 
 export const loginUser = async (serviceNumber, password) => {
   const user = await User.findOne({ serviceNumber })
-    .populate('commandLocation', 'name code') // Fetch commandLocation details
+    .populate('commandLocation', 'name code')
+    .select('+password +isSuspended')
     .lean();
 
   if (!user) {
-    throw new ErrorWithStatus('User not found', 404);
+    throw new ErrorWithStatus('Invalid credentials', 401);
   }
 
-  // Check if the user is verified
+  // Check if user is suspended
+  if (user.isSuspended) {
+    throw new ErrorWithStatus(
+      'Your account has been suspended. Please contact administrator.',
+      403
+    );
+  }
+
   if (!user.verified) {
     throw new ErrorWithStatus(
-      'Please verify your email before logging in.',
+      'Please verify your email before logging in',
       403
     );
   }
 
   const isPasswordValid = await bcrypt.compare(password, user.password);
   if (!isPasswordValid) {
-    throw new ErrorWithStatus('Username or Password is invalid', 400);
+    throw new ErrorWithStatus('Invalid credentials', 401);
   }
 
-  const JWT_SECRET = process.env.JWT_SECRET || 'secret';
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET is not configured');
+  }
+
   const token = jwt.sign(
     { role: user.role, email: user.email, id: user._id },
-    JWT_SECRET,
-    {
-      expiresIn: '1h',
-    }
+    process.env.JWT_SECRET,
+    { expiresIn: JWT_EXPIRATION }
   );
 
   return {
     message: 'Login successful',
     data: {
       accessToken: token,
-      user: {
-        id: user._id,
-        name: user.name,
-        serviceNumber: user.serviceNumber,
-        role: user.role,
-        email: user.email,
-        ...(user.commandLocation && {
-          commandLocation: {
-            name: user.commandLocation.name,
-            code: user.commandLocation.code,
-          },
-        }),
-      },
+      user: formatUserResponse(user),
     },
   };
 };
 
 export const verifyEmail = async (token) => {
-  const user = await User.findOne({ emailVerificationToken: token });
-
-  if (!user) {
-    throw new ErrorWithStatus('Invalid or expired token', 400);
-  }
-
-  if (user.emailVerificationTokenExpires < Date.now()) {
-    throw new ErrorWithStatus('Token has expired', 400);
-  }
-
-  await User.updateOne(
-    { _id: user._id },
+  const user = await User.findOneAndUpdate(
+    {
+      emailVerificationToken: token,
+      emailVerificationTokenExpires: { $gt: Date.now() },
+    },
     {
       $set: { verified: true },
-      $unset: { emailVerificationToken: 1, emailVerificationTokenExpires: 1 },
-    }
+      $unset: {
+        emailVerificationToken: '',
+        emailVerificationTokenExpires: '',
+      },
+    },
+    { new: true }
   );
 
-  return { message: 'Email verified successfully' };
+  if (!user) {
+    throw new ErrorWithStatus(
+      'Invalid or expired verification link. Please request a new one.',
+      400
+    );
+  }
+
+  return {
+    message: 'Email verified successfully',
+    data: {
+      id: user._id,
+      serviceNumber: user.serviceNumber,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    },
+  };
 };
 
 export const resendVerificationEmail = async (email) => {
   const user = await User.findOne({ email });
 
   if (!user) {
-    throw new ErrorWithStatus('User not found', 404);
+    throw new ErrorWithStatus('No account found with this email address', 404);
   }
 
   if (user.verified) {
-    throw new ErrorWithStatus('Email already verified', 400);
+    throw new ErrorWithStatus('This email is already verified', 400);
   }
 
-  // Generate a new verification token
-  const emailVerificationToken = generateVerificationToken();
-  const emailVerificationTokenExpires = Date.now() + 20 * 60 * 1000; // 20 minutes
+  const newToken = generateVerificationToken();
+  const expiresAt = Date.now() + EMAIL_VERIFY_EXPIRY;
 
-  // Update the user with the new token
   await User.updateOne(
     { _id: user._id },
-    { $set: { emailVerificationToken, emailVerificationTokenExpires } }
+    {
+      $set: {
+        emailVerificationToken: newToken,
+        emailVerificationTokenExpires: expiresAt,
+      },
+    }
   );
 
-  // Send the new verification email
-  await sendVerificationEmail(user.name, user.email, emailVerificationToken);
+  await sendVerificationEmail(user.name, user.email, newToken);
 
-  return { message: 'Verification email sent successfully' };
+  return {
+    message: 'New verification email sent',
+    expiresAt: new Date(expiresAt).toISOString(),
+  };
 };
 
-// Forgot password
 export const forgotPassword = async (email) => {
   const user = await User.findOne({ email });
 
   if (!user) {
-    throw new ErrorWithStatus('User not found', 404);
+    throw new ErrorWithStatus('No account found with this email address', 404);
   }
 
-  // Generate a password reset token
-  const passwordResetToken = generatePasswordResetToken();
-  const passwordResetTokenExpires = Date.now() + 20 * 60 * 1000; // 20 minutes
+  const resetToken = generatePasswordResetToken();
+  const expiresAt = Date.now() + PASSWORD_RESET_EXPIRY;
 
-  // Update the user with the reset token
   await User.updateOne(
     { _id: user._id },
-    { $set: { passwordResetToken, passwordResetTokenExpires } }
+    {
+      $set: {
+        passwordResetToken: resetToken,
+        passwordResetTokenExpires: expiresAt,
+      },
+    }
   );
 
-  // Send the password reset email
-  await sendPasswordResetEmail(user.name, user.email, passwordResetToken);
+  await sendPasswordResetEmail(user.name, user.email, resetToken);
 
-  return { message: 'Password reset email sent successfully' };
+  return {
+    message: 'Password reset link sent (valid for 1 hour)',
+    expiresAt: new Date(expiresAt).toISOString(),
+  };
 };
 
-// Reset password
 export const resetPassword = async (token, newPassword) => {
   const user = await User.findOne({
     passwordResetToken: token,
-    passwordResetTokenExpires: { $gt: Date.now() }, // Check if the token is still valid
+    passwordResetTokenExpires: { $gt: Date.now() },
   });
 
   if (!user) {
-    throw new ErrorWithStatus('Invalid or expired token', 400);
+    throw new ErrorWithStatus(
+      'This password reset link is invalid or has expired. Please request a new one.',
+      400
+    );
   }
 
-  // Hash the new password
   const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-  // Update the user's password and clear the reset token
   await User.updateOne(
     { _id: user._id },
     {
       $set: { password: hashedPassword },
-      $unset: { passwordResetToken: 1, passwordResetTokenExpires: 1 },
+      $unset: {
+        passwordResetToken: '',
+        passwordResetTokenExpires: '',
+      },
     }
   );
 
-  return { message: 'Password reset successfully' };
+  return {
+    message:
+      'Password updated successfully. You may now log in with your new password.',
+    user: formatUserResponse(user),
+  };
 };
