@@ -1,4 +1,4 @@
-import User from '../model/Schema/user.schema.js';
+import User from '../model/Schema/user.Schema.js';
 import { ErrorWithStatus } from '../Exception/error-with-status.exception.js';
 
 const formatUserResponse = (user) => ({
