@@ -32,14 +32,6 @@ const commonValidations = {
         'any.required': 'Email is required',
       }),
 
-  password: () =>
-    Joi.string().min(6).max(255).required().messages({
-      'string.empty': 'Password is required',
-      'string.min': 'Password must be at least 6 characters long',
-      'string.max': 'Password cannot exceed 255 characters',
-      'any.required': 'Password is required',
-    }),
-
   role: () =>
     Joi.string()
       .valid('SuperAdmin', 'Admin', 'OperationalOfficer', 'CancellationOfficer')
@@ -59,7 +51,6 @@ export const createUserSchema = Joi.object({
   serviceNumber: commonValidations.serviceNumber(),
   name: commonValidations.name(),
   email: commonValidations.email(),
-  password: commonValidations.password(),
   role: commonValidations.role(),
   commandLocation: Joi.when('role', {
     is: Joi.valid('OperationalOfficer', 'CancellationOfficer'),
