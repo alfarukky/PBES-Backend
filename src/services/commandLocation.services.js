@@ -103,6 +103,10 @@ export const updateLocation = async (id, updates) => {
 export const deleteLocation = async (id) => {
   const result = await CommandLocation.deleteOne({ _id: id });
   if (result.deletedCount === 0) {
-    throw new ErrorWithStatus('Location not found', 404);
+    throw new ErrorWithStatus(
+      'Command location not found or already deleted',
+      404
+    );
   }
+  return { success: true, message: 'Command location deleted successfully' };
 };

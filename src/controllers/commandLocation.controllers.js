@@ -60,14 +60,16 @@ export const deleteLocation = async (req, res) => {
   try {
     const { id } = req.params;
     const result = await commandLocationService.deleteLocation(id);
-    res.status(204).json({
-      message: 'User deleted successfully',
-      data: result,
+    res.status(200).json({
+      success: true,
+      message: result.message,
+      data: null, // Explicitly state no data is returned (optional)
     });
   } catch (err) {
     res.status(err.status || 500).json({
       success: false,
       message: err.message,
+      data: null,
     });
   }
 };

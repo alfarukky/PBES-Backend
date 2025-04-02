@@ -28,7 +28,7 @@ locationRoute.post(
 locationRoute.get(
   '/',
   authMiddleware,
-  roleMiddleware(['SuperAdmin']),
+  roleMiddleware(['SuperAdmin', 'Admin']),
   generateMiddleWare(paginationSchema),
   getLocations
 );
