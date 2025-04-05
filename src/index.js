@@ -39,7 +39,6 @@ app.use('/api/auth', authLimiter);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/locations', locationRoutes);
-app.use('/api/declarations', declarationRoutes);
 
 //catch all routes
 app.get('/*', (req, res) => {
