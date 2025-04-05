@@ -1,5 +1,6 @@
 import express from 'express';
 import dotenv from 'dotenv';
+import cors from 'cors';
 import authRoutes from './routes/auth.route.js';
 import locationRoutes from './routes/commandLocation.route.js';
 import userRoutes from './routes/user.route.js';
@@ -8,6 +9,17 @@ dotenv.config();
 
 const app = express();
 
+// Configure CORS
+app.use(
+  cors({
+    origin: 'http://localhost:5173', // Allow your frontend origin
+    credentials: true, // If you're using cookies/sessions
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allowed methods
+    allowedHeaders: ['Content-Type', 'Authorization'], // Allowed headers
+  })
+);
+
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -27,6 +39,7 @@ app.use('/api/auth', authLimiter);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/locations', locationRoutes);
+app.use('/api/declarations', declarationRoutes);
 
 //catch all routes
 app.get('/*', (req, res) => {
