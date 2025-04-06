@@ -44,7 +44,7 @@ export const updateLocation = async (req, res) => {
       req.params.id,
       req.body
     );
-    res.json({
+    res.status(200).json({
       success: true,
       data: location,
     });

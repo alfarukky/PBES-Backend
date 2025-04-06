@@ -1,5 +1,6 @@
 import bcrypt from 'bcrypt';
 import User from '../model/Schema/user.Schema.js';
+import CommandLocation from '../model/Schema/commandLocation.Schema.js';
 import jwt from 'jsonwebtoken';
 import { ErrorWithStatus } from '../Exception/error-with-status.exception.js';
 import {
@@ -63,6 +64,14 @@ export const registerUser = async (
       'Command location is required for officer roles',
       400
     );
+  }
+
+  // Check if command location exists
+  const validLocation = await CommandLocation.findById(commandLocation)
+    .select('_id')
+    .lean();
+  if (!validLocation) {
+    throw new ErrorWithStatus('Invalid command location specified', 400);
   }
 
   // Check for existing user (optimized query)
@@ -141,7 +150,12 @@ export const loginUser = async (serviceNumber, password) => {
   }
 
   const token = jwt.sign(
-    { role: user.role, email: user.email, id: user._id },
+    {
+      id: user._id,
+      role: user.role,
+      email: user.email,
+      commandLocation: user.commandLocation,
+    },
     process.env.JWT_SECRET,
     { expiresIn: JWT_EXPIRATION }
   );

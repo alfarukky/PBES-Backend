@@ -4,7 +4,9 @@ export const suspendUser = async (req, res) => {
   try {
     const { id } = req.params;
     const result = await userService.suspendUser(id, req.user.role);
-    res.json({ data: result });
+    res
+      .status(200)
+      .json({ message: 'User suspended successfully', data: result });
   } catch (err) {
     res.status(err.status || 500).json({ message: err.message });
   }
@@ -13,7 +15,7 @@ export const suspendUser = async (req, res) => {
 export const getAllUsers = async (req, res) => {
   try {
     const result = await userService.getAllUsers(req.user.role);
-    res.json({ data: result });
+    res.status(200).json({ data: result });
   } catch (err) {
     res.status(err.status || 500).json({ message: err.message });
   }
@@ -24,7 +26,10 @@ export const getUserById = async (req, res) => {
     const { id } = req.params;
     const requesterRole = req.user.role;
     const result = await userService.getUserById(id, requesterRole);
-    res.json({ data: result });
+    if (!result) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.status(200).json({ data: result });
   } catch (err) {
     res.status(err.status || 500).json({ message: err.message });
   }
@@ -36,7 +41,7 @@ export const updateUser = async (req, res) => {
     const updates = req.body;
     const requesterRole = req.user.role;
     const result = await userService.updateUser(id, updates, requesterRole);
-    res.json({
+    res.status(200).json({
       message: 'User updated successfully',
       data: result,
     });
@@ -50,7 +55,7 @@ export const deleteUser = async (req, res) => {
     const { id } = req.params;
     const requesterRole = req.user.role;
     await userService.deleteUser(id, requesterRole);
-    res.json({ message: 'User deleted successfully' });
+    res.status(204).send(); // No content since the user is deleted
   } catch (err) {
     res.status(err.status || 500).json({ message: err.message });
   }

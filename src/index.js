@@ -4,6 +4,7 @@ import cors from 'cors';
 import authRoutes from './routes/auth.route.js';
 import locationRoutes from './routes/commandLocation.route.js';
 import userRoutes from './routes/user.route.js';
+import declarationRoutes from './routes/declaration.route.js';
 import { limiter, authLimiter } from './middleware/limiter.middleware.js';
 dotenv.config();
 
@@ -39,6 +40,7 @@ app.use('/api/auth', authLimiter);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/locations', locationRoutes);
+app.use('/api/declarations', declarationRoutes);
 
 //catch all routes
 app.get('/*', (req, res) => {
