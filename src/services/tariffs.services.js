@@ -21,12 +21,12 @@ export const importTariffsFromExcel = async (filePath) => {
     const tariffs = data.map((item) => ({
       cetCode: String(item['CET Code']).trim(),
       description: String(item['Description']).trim(),
-      su: item['SU'] || null,
-      id: item['ID'] || null,
-      vat: item['VAT'] || null,
-      lvy: item['LVY'] || null,
-      exc: item['EXC'] || null,
-      dov: item['DOV'] || null,
+      su: item['SU'] || '0',
+      id: item['ID'] || '0',
+      vat: item['VAT'] || '0',
+      lvy: item['LVY'] || '0',
+      exc: item['EXC'] || '0',
+      dov: item['DOV'] || '0',
     }));
 
     const { deletedCount } = await Tariff.deleteMany({});

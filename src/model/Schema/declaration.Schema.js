@@ -32,19 +32,10 @@ const declarationSchema = new mongoose.Schema(
     modeOfTransport: {
       type: String,
       required: true,
-      enum: ['AIR', 'LAND'],
+      enum: ['AIR', 'LAND', 'SEA'],
       default: 'AIR', // This ensures required validation works properly with enum
     },
-    modeOfTransportNumber: {
-      type: String,
-      required: true,
-      min: 5,
-    },
-    modeOfTransportSeatNumber: {
-      type: String,
-      required: true,
-      minlength: 1,
-    },
+
     departureDate: {
       type: Date,
       required: true,
@@ -69,13 +60,14 @@ const declarationSchema = new mongoose.Schema(
         itemNo: { type: Number, required: true, min: 1 },
         commodityCode: { type: String, required: true },
         commodityDescription: { type: String, required: true },
+        itemDescription: String,
         countryOfOrigin: { type: String, required: true },
         packageNumber: { type: Number, required: true, min: 1 },
         packageKind: { type: String, required: true },
         grossMass: { type: Number, required: true, min: 0 },
         netMass: { type: Number, required: true, min: 0 },
-        invoiceValue: { type: Number, required: true, min: 0 },
-        procedureCode: String,
+        itemValue: { type: Number, required: true, min: 0 },
+        procedureCode: { type: String, required: true },
         supplementaryUnit: String,
         supplementaryValue1: String,
         supplementaryValue2: String,

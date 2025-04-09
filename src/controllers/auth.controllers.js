@@ -2,8 +2,7 @@ import * as authService from '../services/auth.services.js';
 
 export const registerUser = async (req, res) => {
   try {
-    const { serviceNumber, name, email, password, role, commandLocation } =
-      req.body;
+    const { serviceNumber, name, email, role, commandLocation } = req.body;
     const loggedInUserRole = req.user.role;
     const createdBy = req.user._id;
 
@@ -11,7 +10,6 @@ export const registerUser = async (req, res) => {
       serviceNumber,
       name,
       email,
-      password,
       role,
       commandLocation,
       loggedInUserRole,

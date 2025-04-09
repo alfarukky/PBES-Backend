@@ -19,7 +19,7 @@ const defaultMailOptions = {
 };
 
 // Function to send a verification email
-export const sendVerificationEmail = async (name, email, token) => {
+export const sendVerificationEmail = async (name, email, password, token) => {
   try {
     const mailOptions = { ...defaultMailOptions };
     mailOptions.to = email;
@@ -27,10 +27,13 @@ export const sendVerificationEmail = async (name, email, token) => {
     mailOptions.html = `
       <h1>Email Confirmation</h1>
       <h2>Hello ${name}</h2>
-      <p>Thank you for registering. Please confirm your email by clicking on the following link within 20 minutes.</p>
+      <p><strong>Temporary Password:</strong> ${password}</p>
+      <p>Please change your password after logging in for the first time.</p>
+      <p>To complete your registration, please verify your email by clicking the link below within 20 minutes:</p>
       <a href="${process.env.VIRTUAL_HOST}/api/auth/verify-email/${token}">Click here</a>
-       <p>If you did not receive this email or the link has expired, you can request a new verification email <a href="${process.env.VIRTUAL_HOST}/auth/resend-verification-email">here</a>.</p>
+       <p>If you did not receive this email or the link has expired, you can request a new verification email <a href="${process.env.VIRTUAL_HOST}/api/auth/resend-verification-email">here</a>.</p>
       <p>This email is auto-generated. Please do not reply to this email.</p>
+      <p>If you didn't request this account, please contact support immediately.</p>
     `;
 
     await transporter.sendMail(mailOptions);

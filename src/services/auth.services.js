@@ -6,6 +6,7 @@ import { ErrorWithStatus } from '../Exception/error-with-status.exception.js';
 import {
   generateVerificationToken,
   generatePasswordResetToken,
+  generateRandomPassword,
 } from '../utils/tokenGenerator.utils.js';
 import {
   sendVerificationEmail,
@@ -13,8 +14,8 @@ import {
 } from '../services/email.services.js';
 
 // Constants
-const TOKEN_EXPIRATION = 1 * 60 * 1000; // 20 minutes
-const EMAIL_VERIFY_EXPIRY = 24 * 60 * 60 * 1000;
+const TOKEN_EXPIRATION = 20 * 60 * 1000; // 20 minutes
+const EMAIL_VERIFY_EXPIRY = 20 * 60 * 1000;
 const PASSWORD_RESET_EXPIRY = 60 * 60 * 1000; // 1 hour
 const JWT_EXPIRATION = '1h';
 const ROLE_CREATION_RULES = {
@@ -41,14 +42,13 @@ export const registerUser = async (
   serviceNumber,
   name,
   email,
-  password,
   role,
   commandLocation,
   loggedInUserRole,
   createdBy
 ) => {
   // Validate input
-  if (!serviceNumber || !name || !email || !password || !role) {
+  if (!serviceNumber || !name || !email || !role) {
     throw new ErrorWithStatus('All fields are required', 400);
   }
 
@@ -64,14 +64,13 @@ export const registerUser = async (
       'Command location is required for officer roles',
       400
     );
-  }
-
-  // Check if command location exists
-  const validLocation = await CommandLocation.findById(commandLocation)
-    .select('_id')
-    .lean();
-  if (!validLocation) {
-    throw new ErrorWithStatus('Invalid command location specified', 400);
+    // Check if command location exists
+    const validLocation = await CommandLocation.findById(commandLocation)
+      .select('_id')
+      .lean();
+    if (!validLocation) {
+      throw new ErrorWithStatus('Invalid command location specified', 400);
+    }
   }
 
   // Check for existing user (optimized query)
@@ -84,7 +83,8 @@ export const registerUser = async (
     throw new ErrorWithStatus('User already exists', 400);
   }
 
-  // Create user with hashed password
+  // Generate random password
+  const password = generateRandomPassword();
   const hashedPassword = await bcrypt.hash(password, 10);
   const emailVerificationToken = generateVerificationToken();
 
@@ -105,7 +105,7 @@ export const registerUser = async (
   // Parallelize email sending and user population
   const [userWithLocation] = await Promise.all([
     User.findById(newUser._id).populate('commandLocation', 'name code').lean(),
-    sendVerificationEmail(name, email, emailVerificationToken),
+    sendVerificationEmail(name, email, password, emailVerificationToken),
   ]);
 
   return {
@@ -218,17 +218,24 @@ export const resendVerificationEmail = async (email) => {
   const newToken = generateVerificationToken();
   const expiresAt = Date.now() + EMAIL_VERIFY_EXPIRY;
 
+  // Generate a new temporary password
+  const newPassword = generateRandomPassword();
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  // Update user with new token, expiry, and hashed password
   await User.updateOne(
     { _id: user._id },
     {
       $set: {
         emailVerificationToken: newToken,
         emailVerificationTokenExpires: expiresAt,
+        password: hashedPassword, // Update the password in DB
       },
     }
   );
 
-  await sendVerificationEmail(user.name, user.email, newToken);
+  // Send email with the NEW plaintext password (not the hashed one)
+  await sendVerificationEmail(user.name, user.email, newPassword, newToken);
 
   return {
     message: 'New verification email sent',
@@ -293,6 +300,12 @@ export const resetPassword = async (token, newPassword) => {
   return {
     message:
       'Password updated successfully. You may now log in with your new password.',
-    user: formatUserResponse(user),
+    data: {
+      id: user._id,
+      serviceNumber: user.serviceNumber,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    },
   };
 };

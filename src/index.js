@@ -17,7 +17,7 @@ app.use(
   cors({
     origin: 'http://localhost:5173', // Allow your frontend origin
     credentials: true, // If you're using cookies/sessions
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], // Allowed methods
+    methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'], // Allowed methods
     allowedHeaders: ['Content-Type', 'Authorization'], // Allowed headers
   })
 );
