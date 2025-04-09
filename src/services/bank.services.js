@@ -40,14 +40,9 @@ export const importBanksFromExcel = async (filePath) => {
   }
 };
 
-export const searchBanks = async (query = '') => {
+export const getBanks = async () => {
   try {
-    const regex = new RegExp(query, 'i');
-    return await Bank.find({
-      $or: [{ bankCode: regex }, { bankName: regex }],
-    })
-      .select('-__v -createdAt -updatedAt')
-      .limit(50);
+    return await Bank.find({}).select('-__v -createdAt -updatedAt');
   } catch (error) {
     throw new ErrorWithStatus(400, error.message);
   }

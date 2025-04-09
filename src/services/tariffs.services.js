@@ -53,14 +53,9 @@ export const importTariffsFromExcel = async (filePath) => {
   }
 };
 
-export const searchTariffs = async (query) => {
+export const getTariffs = async () => {
   try {
-    const regex = new RegExp(query, 'i');
-    return await Tariff.find({
-      $or: [{ cetCode: regex }, { description: regex }],
-    })
-      .select('-__v -createdAt -updatedAt')
-      .limit(50);
+    return await Tariff.find({}).select('-__v -createdAt -updatedAt');
   } catch (error) {
     throw new ErrorWithStatus(400, error.message);
   }

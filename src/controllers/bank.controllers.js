@@ -15,8 +15,7 @@ export const importBanks = async (req, res) => {
 
 export const getBanks = async (req, res) => {
   try {
-    const { q } = req.query;
-    const banks = await bankServices.searchBanks(q || '');
+    const banks = await bankServices.getBanks();
     res.status(200).json(banks);
   } catch (error) {
     res.status(err.status || 500).json({ message: error.message });

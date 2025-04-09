@@ -12,6 +12,8 @@ dotenv.config();
 
 const app = express();
 
+app.set('trust proxy', 1); // Trust first proxy (if behind a reverse proxy like Nginx)
+
 // Configure CORS
 app.use(
   cors({
