@@ -26,7 +26,7 @@ export const getLocations = async (req, res) => {
       page: Number(page),
       limit: Number(limit),
     });
-    res.status(201).json({
+    res.status(200).json({
       success: true,
       data: location,
     });

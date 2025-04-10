@@ -23,3 +23,14 @@ export const declarationQuerySchema = Joi.object({
     .pattern(/^[0-9a-fA-F]{24}$/)
     .message('Invalid ID format'),
 }).options({ stripUnknown: true });
+
+export const searchQuerySchema = Joi.object({
+  query: Joi.string()
+    .trim()
+    .max(100)
+    .pattern(/^[a-zA-Z0-9\s\-\.\/]*$/, {
+      name: 'alphanumeric with spaces and basic symbols',
+    })
+    .allow('')
+    .required(),
+});

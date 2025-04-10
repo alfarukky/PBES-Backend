@@ -1,3 +1,4 @@
+import bcrypt from 'bcrypt';
 import User from '../model/Schema/user.Schema.js';
 import { ErrorWithStatus } from '../Exception/error-with-status.exception.js';
 
@@ -131,6 +132,29 @@ export const updateUser = async (userId, userData, requesterRole) => {
     .populate('commandLocation', 'name code');
 
   return formatUserResponse(updatedUser);
+};
+
+export const changeUserPassword = async (
+  userId,
+  currentPassword,
+  newPassword
+) => {
+  const user = await User.findById(userId).select('+password');
+
+  if (!user) {
+    throw new ErrorWithStatus('User not found', 404);
+  }
+
+  const isMatch = await bcrypt.compare(currentPassword, user.password);
+  if (!isMatch) {
+    throw new ErrorWithStatus('Current password is incorrect', 400);
+  }
+
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+  user.password = hashedPassword;
+  await user.save();
+
+  return { message: 'Password updated successfully' };
 };
 
 export const deleteUser = async (userId, requesterRole) => {

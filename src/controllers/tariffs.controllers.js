@@ -22,7 +22,8 @@ export const importTariffs = async (req, res) => {
 
 export const getTariffs = async (req, res) => {
   try {
-    const tariffs = await tariffServices.getTariffs();
+    const { q } = req.query;
+    const tariffs = await tariffServices.searchTariffs(q || '');
     res.status(200).json(tariffs);
   } catch (error) {
     res.status(500).json({ message: error.message });

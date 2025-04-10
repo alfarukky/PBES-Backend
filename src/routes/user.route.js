@@ -7,9 +7,11 @@ import {
   getAllUsers,
   getUserById,
   updateUser,
+  changeUserPassword,
   deleteUser,
 } from '../controllers/user.controllers.js';
 import {
+  changePasswordSchema,
   createUserSchema,
   userQuerySchema,
 } from '../validation/user.validation.js';
@@ -50,6 +52,14 @@ userRoute.put(
   generateMiddleWare(createUserSchema, 'body'),
   updateUser
 );
+
+userRoute.post(
+  '/change-password',
+  authMiddleware,
+  generateMiddleWare(changePasswordSchema, 'body'),
+  changeUserPassword
+);
+
 userRoute.delete(
   '/:id/delete-user',
   authMiddleware,

@@ -50,6 +50,28 @@ export const updateUser = async (req, res) => {
   }
 };
 
+export const changeUserPassword = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res
+        .status(400)
+        .json({ message: 'Current and new password required' });
+    }
+
+    const result = await userService.changeUserPassword(
+      userId,
+      currentPassword,
+      newPassword
+    );
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(err.status || 500).json({ message: err.message });
+  }
+};
+
 export const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;

@@ -14,4 +14,8 @@ const tariffSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Create compound indexes for performance
+tariffSchema.index({ cetCode: 1 });
+tariffSchema.index({ description: 1 });
+
 export default mongoose.model('Tariff', tariffSchema);
