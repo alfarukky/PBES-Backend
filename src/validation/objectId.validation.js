@@ -25,12 +25,12 @@ export const declarationQuerySchema = Joi.object({
 }).options({ stripUnknown: true });
 
 export const searchQuerySchema = Joi.object({
-  query: Joi.string()
+  q: Joi.string()
     .trim()
     .max(100)
     .pattern(/^[a-zA-Z0-9\s\-\.\/]*$/, {
       name: 'alphanumeric with spaces and basic symbols',
     })
     .allow('')
-    .required(),
+    .optional(),
 });
