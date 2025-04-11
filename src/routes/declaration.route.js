@@ -5,6 +5,7 @@ import {
   createDeclaration,
   getDeclarations,
   getDeclarationById,
+  addAssessmentReference,
 } from '../controllers/declaration.controllers.js';
 import { generateMiddleWare } from '../middleware/route.middleware.js';
 import { createDeclarationSchema } from '../validation/decleration.validation.js';
@@ -45,6 +46,14 @@ declarationRoute.get(
   ]),
   generateMiddleWare(objectIdSchema, 'params'),
   getDeclarationById
+);
+
+declarationRoute.get(
+  '/:id/assessment',
+  authMiddleware,
+  roleMiddleware(['OperationalOfficer', 'CancellationOfficer']),
+  generateMiddleWare(objectIdSchema, 'params'),
+  addAssessmentReference
 );
 
 export default declarationRoute;

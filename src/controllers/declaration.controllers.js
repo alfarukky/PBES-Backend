@@ -63,3 +63,23 @@ export const getDeclarationById = async (req, res) => {
     });
   }
 };
+
+export const addAssessmentReference = async (req, res) => {
+  try {
+    const updatedDeclaration = await declarationService.addAssessmentReference(
+      req.params.id,
+      req.user.id, // Pass user ID
+      req.user.role // Pass user role
+    );
+
+    res.status(200).json({
+      success: true,
+      data: updatedDeclaration,
+    });
+  } catch (err) {
+    res.status(err.status || 500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};

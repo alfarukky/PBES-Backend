@@ -49,6 +49,7 @@ export const getLocations = async (page = 1, limit = 10) => {
 
   const [data, total] = await Promise.all([
     CommandLocation.find({})
+      .select('-__V')
       .sort({ name: 1 })
       .skip((validatedPage - 1) * validatedLimit)
       .limit(validatedLimit)

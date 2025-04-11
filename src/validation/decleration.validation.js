@@ -15,7 +15,7 @@ const itemSchema = Joi.object({
   packageKind: Joi.string().trim().required(),
   grossMass: Joi.number().min(0).required(),
   netMass: Joi.number().min(0).required(),
-  invoiceValue: Joi.number().min(0).required(),
+  itemValue: Joi.number().min(0).required(),
   procedureCode: Joi.string().trim().optional(),
   supplementaryUnit: Joi.string().trim().optional(),
   supplementaryValue1: Joi.string().trim().optional(),
@@ -37,7 +37,6 @@ export const createDeclarationSchema = Joi.object({
   // Header fields
   modelOfDeclaration: Joi.string().trim().required(),
   office: Joi.string().trim().required(),
-  customsReferenceNumber: Joi.string().trim().optional(),
   assessmentSerial: Joi.string().trim().optional(),
   receiptNumber: Joi.string().trim().optional(),
   // totalPackages: Joi.number().integer().min(1).required(), // Removed to match Mongoose schema
@@ -57,12 +56,10 @@ export const createDeclarationSchema = Joi.object({
 
   // Transport fields
   countryOfDeparture: Joi.string().trim().required(), // Changed from countryOfExport
-  motRegistrationNumber: Joi.string().trim().min(5).required(),
-  modeOfTransport: Joi.string().valid('AIR', 'LAND').required(),
-  modeOfTransportNumber: Joi.string().trim().min(5).required(),
-  modeOfTransportSeatNumber: Joi.string().trim().min(1).required(),
-  departureDate: Joi.date().required(),
-  arrivalDate: Joi.date().required(),
+  motRegistrationNumber: Joi.string().trim().min(5).required(), // Changed from motRegistrationNo
+  modeOfTransport: Joi.string().valid('AIR', 'LAND', 'SEA').required(),
+  departureDate: Joi.date().optional(),
+  arrivalDate: Joi.date().optional(),
 
   // Financial
   modeOfPayment: Joi.string().trim().required(), // Changed from termsOfPayment
@@ -83,7 +80,6 @@ export const createDeclarationSchema = Joi.object({
   // companyDetails: Joi.string().trim().optional(),
   // assessmentReceiptNumber: Joi.string().trim().optional(),
 
- 
   channel: Joi.string()
     .valid('GREEN', 'RED')
     .uppercase()
@@ -96,7 +92,7 @@ export const createDeclarationSchema = Joi.object({
     .optional(),
 }).options({ stripUnknown: true });
 
- // System fields (frontend shouldn't send these)
+// System fields (frontend shouldn't send these)
 //channel: Joi.string().valid('GREEN', 'RED').default('GREEN').optional(),
 //   paymentDetails: paymentDetailsSchema.default({ amountPaid: 0 }),
 //   clearanceDetails: Joi.object({

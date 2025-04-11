@@ -64,15 +64,15 @@ export const registerUser = async (
       'Command location is required for officer roles',
       400
     );
-    // Check if command location exists
-    const validLocation = await CommandLocation.findById(commandLocation)
-      .select('_id')
-      .lean();
-    if (!validLocation) {
-      throw new ErrorWithStatus('Invalid command location specified', 400);
-    }
   }
 
+  // Check if command location exists
+  const validLocation = await CommandLocation.findById(commandLocation)
+    .select('_id')
+    .lean();
+  if (!validLocation) {
+    throw new ErrorWithStatus('Invalid command location specified', 400);
+  }
   // Check for existing user (optimized query)
   const existingUser = await User.findOne({
     $or: [{ serviceNumber }, { email }],

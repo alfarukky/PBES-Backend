@@ -29,6 +29,39 @@ const DECLARATION_ACCESS_RULES = {
   SuperAdmin: () => ({}), // No restrictions
 };
 
+function generateNextCustomRef(lastRef, year) {
+  if (!lastRef?.customsReferenceNumber) {
+    return `P1${year}`;
+  }
+
+  const match = lastRef.customsReferenceNumber.match(
+    new RegExp(`^P(\\d+)${year}$`)
+  );
+  if (!match) {
+    throw new ErrorWithStatus(
+      `Reference number format mismatch: ${lastRef.customsReferenceNumber}`,
+      400
+    );
+  }
+
+  const lastSerial = parseInt(match[1], 10);
+  if (isNaN(lastSerial)) {
+    throw new ErrorWithStatus(
+      `Invalid serial number in reference: ${lastRef.customsReferenceNumber}`,
+      400
+    );
+  }
+
+  if (lastSerial >= Number.MAX_SAFE_INTEGER - 1) {
+    throw new ErrorWithStatus(
+      'Serial number overflow: max value exceeded',
+      500
+    );
+  }
+
+  return `P${lastSerial + 1}${year}`;
+}
+
 export const createDeclaration = async (
   formData,
   userId,
@@ -58,26 +91,61 @@ export const createDeclaration = async (
     throw new ErrorWithStatus('At least one item is required', 400);
   }
 
-  // 3. Prepare system fields
-  const declarationData = {
-    ...formData,
-    commandLocation,
-    createdBy: userId,
-    lastModifiedBy: userId,
-    status: 'PENDING', // Default status
-    channel: formData.channel || 'GREEN', // Default to green channel
+  const currentYear = new Date().getFullYear();
+  let attempt = 0;
+  let newDeclaration;
+  let lastError = null;
 
-    // Initialize subdocuments safely
-    paymentDetails: {
-      amountPaid: 0,
-      ...formData.paymentDetails,
-    },
-    clearanceDetails: formData.clearanceDetails || {},
-    seizureDetails: formData.seizureDetails || {},
-    cancellationDetails: formData.cancellationDetails || {},
-  };
-  // 4. Create declaration
-  const newDeclaration = await Declaration.create(declarationData);
+  while (attempt < 3) {
+    try {
+      const lastDeclaration = await Declaration.findOne(
+        { customsReferenceNumber: { $regex: `^P\\d+${currentYear}$` } },
+        { customsReferenceNumber: 1 },
+        { sort: { customsReferenceNumber: -1 } }
+      ).lean();
+
+      const nextCustomsRef = generateNextCustomRef(
+        lastDeclaration,
+        currentYear
+      );
+
+      newDeclaration = await Declaration.create({
+        ...formData,
+        customsReferenceNumber: nextCustomsRef,
+        commandLocation,
+        createdBy: userId,
+        lastModifiedBy: userId,
+        status: 'PENDING',
+        channel: formData.channel || 'GREEN',
+        paymentDetails: {
+          amountPaid: 0,
+          ...formData.paymentDetails,
+        },
+        clearanceDetails: formData.clearanceDetails || {},
+        seizureDetails: formData.seizureDetails || {},
+        cancellationDetails: formData.cancellationDetails || {},
+      });
+
+      break; // Successful creation
+    } catch (err) {
+      lastError = err;
+      if (err.code !== 11000) throw err; // Only retry on duplicate key error
+      attempt++;
+      await new Promise((resolve) =>
+        setTimeout(resolve, 50 + Math.random() * 100)
+      );
+    }
+  }
+
+  if (!newDeclaration) {
+    throw new ErrorWithStatus(
+      `Declaration submission failed after 3 attempts. ${
+        lastError?.message || ''
+      }`,
+      500
+    );
+  }
+
   return {
     success: true,
     message: 'Declaration submitted successfully',
@@ -138,4 +206,63 @@ export const getDeclarationById = async (declarationId, user) => {
   }
 
   return declaration;
+};
+
+export const addAssessmentReference = async (
+  declarationId,
+  userId,
+  userRole
+) => {
+  // Validate declaration exists
+  const declaration = await Declaration.findById(declarationId);
+  if (!declaration) {
+    throw new ErrorWithStatus('Declaration not found', 404);
+  }
+
+  // Authorization check
+  if (!['OperationalOfficer', 'CancellationOfficer'].includes(userRole)) {
+    throw new ErrorWithStatus(
+      'Only operational/cancellation officers can add assessment references',
+      403
+    );
+  }
+
+  // Business rule validation
+  if (declaration.status !== 'PENDING') {
+    throw new ErrorWithStatus('Only pending declarations can be updated', 400);
+  }
+
+  // Generate and validate assessment reference
+  const assessmentRef = declaration.customsReferenceNumber.replace('P', 'L');
+
+  // Check for duplicates
+  const existingAssessment = await Declaration.findOne({
+    assessmentSerial: assessmentRef,
+    _id: { $ne: declarationId },
+  });
+
+  if (existingAssessment) {
+    throw new ErrorWithStatus('Assessment reference already exists', 400);
+  }
+
+  // Update declaration
+  const updatedDeclaration = await Declaration.findByIdAndUpdate(
+    declarationId,
+    {
+      assessmentSerial: assessmentRef,
+      lastModifiedBy: userId,
+      status: 'ASSESED', // Optional: consider updating status if needed
+    },
+    { new: true }
+  );
+
+  return {
+    success: true,
+    message: 'Assessment reference added successfully',
+    data: {
+      customReference: updatedDeclaration.customsReferenceNumber,
+      assessmentReference: updatedDeclaration.assessmentSerial,
+      status: updatedDeclaration.status,
+    },
+  };
 };

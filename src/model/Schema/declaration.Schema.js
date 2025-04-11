@@ -1,10 +1,11 @@
 import mongoose from 'mongoose';
+import { string } from 'zod';
 const declarationSchema = new mongoose.Schema(
   {
     // Header fields
     modelOfDeclaration: { type: String, required: true },
     office: { type: String, required: true },
-    customsReferenceNumber: String,
+    customsReferenceNumber: { type: String, unique: true, required: true },
     assessmentSerial: String,
     receiptNumber: String,
     //totalPackages: { type: Number, required: true, min: 1 },
@@ -17,6 +18,8 @@ const declarationSchema = new mongoose.Schema(
     passportNumber: { type: String, required: true },
     firstName: { type: String, required: true },
     lastName: { type: String, required: true },
+    phoneNumber: String,
+    email: String,
     nationality: { type: String, required: true },
     address: { type: String, required: true },
     //declarantCode: { type: String, required: true },
@@ -36,14 +39,8 @@ const declarationSchema = new mongoose.Schema(
       default: 'AIR', // This ensures required validation works properly with enum
     },
 
-    departureDate: {
-      type: Date,
-      required: true,
-    },
-    arrivalDate: {
-      type: Date,
-      required: true,
-    },
+    departureDate: Date,
+    arrivalDate: Date,
 
     // Financial
     modeOfPayment: { type: String, required: true },
@@ -77,7 +74,7 @@ const declarationSchema = new mongoose.Schema(
     // Assessment
     status: {
       type: String,
-      enum: ['PENDING', 'PAID', 'SEIZED', 'CANCELLED', 'CLEARED'],
+      enum: ['PENDING', 'ASSESED', 'PAID', 'SEIZED', 'CANCELLED', 'CLEARED'],
       default: 'PENDING',
     },
     //assessment Fields
