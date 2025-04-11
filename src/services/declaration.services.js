@@ -180,6 +180,7 @@ export const getDeclarations = async (user, filters = {}) => {
 
 export const getDeclarationById = async (declarationId, user) => {
   const declaration = await Declaration.findById(declarationId)
+    .select('-__v -createdAt -updatedAt')
     .populate('createdBy', 'name serviceNumber')
     .populate('commandLocation', 'name code')
     .lean();
