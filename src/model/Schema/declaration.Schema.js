@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-import { string } from 'zod';
 const declarationSchema = new mongoose.Schema(
   {
     // Header fields
