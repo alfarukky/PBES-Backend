@@ -56,24 +56,25 @@ export const registerUser = async (
     throw new ErrorWithStatus(`${loggedInUserRole} cannot create ${role}`, 403);
   }
 
-  if (
-    ['OperationalOfficer', 'CancellationOfficer'].includes(role) &&
-    !commandLocation
-  ) {
-    throw new ErrorWithStatus(
-      'Command location is required for officer roles',
-      400
-    );
+  // Command location validation ONLY for operational/cancellation officers
+  if (['OperationalOfficer', 'CancellationOfficer'].includes(role)) {
+    if (!commandLocation) {
+      throw new ErrorWithStatus(
+        'Command location is required for officer roles',
+        400
+      );
+    }
+
+    // Validate command location exists
+    const validLocation = await CommandLocation.findById(commandLocation)
+      .select('_id')
+      .lean();
+    if (!validLocation) {
+      throw new ErrorWithStatus('Invalid command location specified', 400);
+    }
   }
 
-  // Check if command location exists
-  const validLocation = await CommandLocation.findById(commandLocation)
-    .select('_id')
-    .lean();
-  if (!validLocation) {
-    throw new ErrorWithStatus('Invalid command location specified', 400);
-  }
-  // Check for existing user (optimized query)
+  // Check for existing user
   const existingUser = await User.findOne({
     $or: [{ serviceNumber }, { email }],
   })
@@ -94,7 +95,7 @@ export const registerUser = async (
     email,
     password: hashedPassword,
     role,
-    ...(role === 'OperationalOfficer' || role === 'CancellationOfficer'
+    ...(['OperationalOfficer', 'CancellationOfficer'].includes(role)
       ? { commandLocation }
       : {}),
     createdBy,
