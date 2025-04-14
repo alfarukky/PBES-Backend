@@ -29,7 +29,7 @@ const declarationSchema = new mongoose.Schema(
     motRegistrationNumber: {
       type: String,
       required: true,
-      min: 5,
+      minlength: 5,
     },
     modeOfTransport: {
       type: String,
@@ -156,8 +156,8 @@ declarationSchema.index({ createdBy: 1 });
 declarationSchema.index({ commandLocation: 1 });
 declarationSchema.index({ status: 1 });
 declarationSchema.index({ commandLocation: 1, status: 1 });
+declarationSchema.index({ createdAt: -1 });
 // declarationSchema.index({ passportNumber: 1 });
-// declarationSchema.index({ createdAt: -1 });
 // declarationSchema.index({ 'paymentDetails.paymentDate': 1 });
 
 export default mongoose.model('Declaration', declarationSchema);

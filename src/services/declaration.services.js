@@ -10,6 +10,7 @@ const REQUIRED_FIELDS = [
   'items',
   'firstName',
   'lastName',
+  'motRegistrationNumber',
   'modeOfPayment',
 ];
 
@@ -101,7 +102,7 @@ export const createDeclaration = async (
       const lastDeclaration = await Declaration.findOne(
         { customsReferenceNumber: { $regex: `^P\\d+${currentYear}$` } },
         { customsReferenceNumber: 1 },
-        { sort: { customsReferenceNumber: -1 } }
+        { sort: { createdAt: -1 } }
       ).lean();
 
       const nextCustomsRef = generateNextCustomRef(
