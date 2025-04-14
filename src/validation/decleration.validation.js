@@ -8,14 +8,25 @@ import Joi from 'joi';
 // Item sub-schema
 const itemSchema = Joi.object({
   itemNo: Joi.number().integer().min(1).required(),
-  commodityCode: Joi.string().trim().required(),
-  commodityDescription: Joi.string().trim().required(),
+  cetCode: Joi.string().trim().optional(),
+  cetCodeDescription: Joi.string().trim().required(), // Additional field from Zod
+  itemDescription: Joi.string().trim().optional(),
   countryOfOrigin: Joi.string().trim().required(),
   packageNumber: Joi.number().integer().min(1).required(),
   packageKind: Joi.string().trim().required(),
   grossMass: Joi.number().min(0).required(),
   netMass: Joi.number().min(0).required(),
-  itemValue: Joi.number().min(0).required(),
+  itemValue: Joi.number().min(0).optional(),
+  levy: Joi.number().min(0).optional(),
+  duty: Joi.number().min(0).optional(),
+  vat: Joi.number().min(0).optional(),
+  etls: Joi.number().min(0).optional(),
+  ciss: Joi.number().min(0).optional(),
+  surCharge: Joi.number().min(0).optional(),
+  levyCharge: Joi.number().min(0).optional(),
+  dutyCharge: Joi.number().min(0).optional(),
+  vatCharge: Joi.number().min(0).optional(),
+  totalItemValueWithTaxes: Joi.number().min(0).optional(),
   procedureCode: Joi.string().trim().optional(),
   supplementaryUnit: Joi.string().trim().optional(),
   supplementaryValue1: Joi.string().trim().optional(),
@@ -49,6 +60,8 @@ export const createDeclarationSchema = Joi.object({
   passportNumber: Joi.string().trim().required(),
   firstName: Joi.string().trim().required(),
   lastName: Joi.string().trim().required(),
+  phoneNumber: Joi.string().trim().min(11).required(), // Added from Zod
+  email: Joi.string().trim().email().required(),
   nationality: Joi.string().trim().required(),
   address: Joi.string().trim().required(),
   // declarantCode: Joi.string().trim().required(), // Removed to match Mongoose schema
