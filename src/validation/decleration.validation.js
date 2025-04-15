@@ -28,9 +28,9 @@ const itemSchema = Joi.object({
   vatCharge: Joi.number().min(0).optional(),
   totalItemValueWithTaxes: Joi.number().min(0).optional(),
   procedureCode: Joi.string().trim().optional(),
-  supplementaryUnit: Joi.string().trim().optional(),
-  supplementaryValue1: Joi.string().trim().optional(),
-  supplementaryValue2: Joi.string().trim().optional(),
+  supplementaryUnit: Joi.string().trim().optional().allow(''),
+  supplementaryValue1: Joi.string().trim().optional().allow(''),
+  supplementaryValue2: Joi.string().trim().optional().allow(''),
 });
 
 // Payment details sub-schema
@@ -48,8 +48,8 @@ export const createDeclarationSchema = Joi.object({
   // Header fields
   modelOfDeclaration: Joi.string().trim().required(),
   office: Joi.string().trim().required(),
-  assessmentSerial: Joi.string().trim().optional(),
-  receiptNumber: Joi.string().trim().optional(),
+  assessmentSerial: Joi.string().trim().optional().allow(''),
+  receiptNumber: Joi.string().trim().optional().allow(''),
   // totalPackages: Joi.number().integer().min(1).required(), // Removed to match Mongoose schema
   totalItems: Joi.number().integer().min(1).required(),
   totalGrossMass: Joi.number().min(0).required(),
@@ -79,7 +79,7 @@ export const createDeclarationSchema = Joi.object({
   bankName: Joi.string().trim().required(),
   bankCode: Joi.string().trim().required(),
   bankBranch: Joi.string().trim().required(),
-  bankFileNumber: Joi.string().trim().optional(),
+  bankFileNumber: Joi.string().trim().optional().allow(''), // Changed from bankFileNo
   // valuationNote: Joi.string().trim().optional(), // Removed to match Mongoose schema
   invoiceValue: Joi.number().min(0).required(),
 
