@@ -5,14 +5,20 @@ import {
   createDeclaration,
   getDeclarations,
   getDeclarationById,
-  addAssessmentReference,
+  assessDeclaration,
+  updateDeclaration,
+  cancelDeclaration,
 } from '../controllers/declaration.controllers.js';
 import { generateMiddleWare } from '../middleware/route.middleware.js';
-import { createDeclarationSchema } from '../validation/decleration.validation.js';
+import {
+  createDeclarationSchema,
+  updateDeclarationSchema,
+} from '../validation/decleration.validation.js';
 import {
   objectIdSchema,
   declarationQuerySchema,
 } from '../validation/objectId.validation.js';
+
 const declarationRoute = Router();
 
 declarationRoute.post(
@@ -49,11 +55,28 @@ declarationRoute.get(
 );
 
 declarationRoute.get(
-  '/:id/assessment',
+  '/:id/assess',
   authMiddleware,
   roleMiddleware(['OperationalOfficer', 'CancellationOfficer']),
   generateMiddleWare(objectIdSchema, 'params'),
-  addAssessmentReference
+  assessDeclaration
+);
+
+declarationRoute.put(
+  '/:id',
+  authMiddleware,
+  roleMiddleware(['OperationalOfficer', 'CancellationOfficer']),
+  generateMiddleWare(objectIdSchema, 'params'),
+  generateMiddleWare(updateDeclarationSchema, 'body'),
+  updateDeclaration
+);
+
+declarationRoute.patch(
+  '/:id/cancel',
+  authMiddleware,
+  roleMiddleware('CancellationOfficer'),
+  generateMiddleWare(objectIdSchema, 'params'),
+  cancelDeclaration
 );
 
 export default declarationRoute;

@@ -15,7 +15,7 @@ export const declarationQuerySchema = Joi.object({
   status: Joi.string()
     .trim()
     .uppercase()
-    .valid('PENDING', 'ASSESED', 'PAID', 'SEIZED', 'CANCELLED', 'CLEARED')
+    .valid('STORED', 'ASSESSED', 'PAID', 'CANCELLED', 'CLEARED')
     .messages({
       'any.only': 'Invalid status value',
     }),

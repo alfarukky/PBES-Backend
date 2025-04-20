@@ -4,10 +4,19 @@ const declarationSchema = new mongoose.Schema(
     // Header fields
     modelOfDeclaration: { type: String, required: true },
     office: { type: String, required: true },
-    customsReferenceNumber: { type: String, unique: true, required: true },
-    assessmentSerial: String,
+    customsReferenceNumber: {
+      type: String,
+      required: function () {
+        return this.status === 'ASSESSED';
+      },
+    },
+    assessmentSerial: {
+      type: String,
+      required: function () {
+        return this.status === 'ASSESSED';
+      },
+    },
     receiptNumber: String,
-    //totalPackages: { type: Number, required: true, min: 1 },
     totalItems: { type: Number, required: true, min: 1 },
     totalGrossMass: { type: Number, required: true, min: 0 },
     totalNetMass: { type: Number, required: true, min: 0 },
@@ -21,8 +30,6 @@ const declarationSchema = new mongoose.Schema(
     email: String,
     nationality: { type: String, required: true },
     address: { type: String, required: true },
-    //declarantCode: { type: String, required: true },
-    //declarantNameAddress: { type: String, required: true },
 
     // Transport fields
     countryOfDeparture: { type: String, required: true },
@@ -47,7 +54,6 @@ const declarationSchema = new mongoose.Schema(
     bankCode: { type: String, required: true },
     bankBranch: { type: String, required: true },
     bankFileNumber: String,
-    //valuationNote: String,
     invoiceValue: { type: Number, required: true, min: 0 },
 
     // Items
@@ -83,8 +89,8 @@ const declarationSchema = new mongoose.Schema(
     // Assessment
     status: {
       type: String,
-      enum: ['PENDING', 'ASSESED', 'PAID', 'SEIZED', 'CANCELLED', 'CLEARED'],
-      default: 'PENDING',
+      enum: ['STORED', 'ASSESSED', 'PAID', 'CANCELLED', 'CLEARED'],
+      default: 'STORED',
     },
     //assessment Fields
     // assessmentOffice: String,
@@ -108,11 +114,7 @@ const declarationSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
     },
-    channel: {
-      type: String,
-      enum: ['GREEN', 'RED'],
-      default: 'GREEN',
-    },
+
     paymentDetails: {
       amountPaid: { type: Number, default: 0 },
       paymentDate: Date,
@@ -152,7 +154,7 @@ const declarationSchema = new mongoose.Schema(
   }
 );
 // Ensure these are added to your schema:
-declarationSchema.index({ createdBy: 1 });
+declarationSchema.index({ customsReferenceNumber: 1 });
 declarationSchema.index({ commandLocation: 1 });
 declarationSchema.index({ status: 1 });
 declarationSchema.index({ commandLocation: 1, status: 1 });
