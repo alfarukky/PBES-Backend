@@ -12,6 +12,7 @@ const formatUserResponse = (user) => ({
   isSuspended: user.isSuspended,
   ...(user.commandLocation && {
     commandLocation: {
+      id: user.commandLocation._id,
       name: user.commandLocation.name,
       code: user.commandLocation.code,
     },
