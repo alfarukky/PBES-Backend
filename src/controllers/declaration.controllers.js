@@ -50,7 +50,7 @@ export const getDeclarationById = async (req, res) => {
   try {
     const declaration = await declarationService.getDeclarationById(
       req.params.id,
-      req.user.role
+      req.user
     );
 
     res.status(200).json({

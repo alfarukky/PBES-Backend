@@ -192,7 +192,6 @@ export const getDeclarationById = async (declarationId, user) => {
   if (!declaration) {
     throw new ErrorWithStatus('Declaration not found', 404);
   }
-
   //Convert both IDs to strings for comparison
   const userLocation =
     user.commandLocation?._id?.toString() || user.commandLocation?.toString();
