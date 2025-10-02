@@ -3,9 +3,11 @@ import nodemailer from 'nodemailer';
 // Nodemailer configuration using Gmail service
 const transporter = nodemailer.createTransport({
   service: 'gmail',
+  port: 465, // Standard port for SSL
+  secure: true, // Use `true` for port 465
   auth: {
-    user: process.env.NODEMAILER_EMAIL, // Your Gmail address
-    pass: process.env.NODEMAILER_PASSWORD, // Your Gmail app password
+    user: process.env.EMAIL_USER || 'alfarukky@gmail.com', // Your Gmail address
+    pass: process.env.EMAIL_PASS || 'apei hpbr aiwb egzi', // Your Gmail app password
   },
 });
 
