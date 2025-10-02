@@ -20,7 +20,7 @@ transporter.verify((error, success) => {
 
 // Default mail options
 const defaultMailOptions = {
-  from: `WMTech <${process.env.NODEMAILER_EMAIL}>`, // Use your Gmail address here
+  from: `${process.env.NODEMAILER_EMAIL}`, // Use your Gmail address here
   replyTo: `info@wmtech.cc`,
   subject: 'WMTech',
 };
